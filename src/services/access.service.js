@@ -17,50 +17,40 @@ const RoleShop = {
   ADMIN: "ADMIN",
 };
 class AccessService {
-  static handleRefreshToken = async (refreshToken) => {
-    const foundToken = await KeyTokenService.findByUsedRefreshToken(
-      refreshToken
-    );
-    if (foundToken) {
-      const { userId, email } = verifyJWT(refreshToken, foundToken.privateKey);
-      console.log("userId", userId);
-      console.log("email", email);
+  static handleRefreshToken = async ({ keyStore, user, refreshToken }) => {
+    const { userId, email } = user;
+
+    if (keyStore.refreshTokensUsed.includes(refreshToken)) {
       await KeyTokenService.deleteKeyTokenByUserId(userId);
-      throw new ForbiddenError("please login again!");
+      throw new ForbiddenError("Please login again");
     }
 
-    const keyTokenHolder = await KeyTokenService.findByRefreshToken({
-      refreshToken,
-    });
+    if (keyStore.refreshToken !== refreshToken) {
+      throw new AuthFailureError("Shop not registered");
+    }
 
-    if (!keyTokenHolder) throw new AuthFailureError("Shop not registered!");
-    const { userId, email } = await verifyJWT(
-      refreshToken,
-      keyTokenHolder.privateKey
-    );
     const foundShop = await ShopService.findByEmail({ email });
     if (!foundShop) throw new AuthFailureError("Shop not registered!");
     const tokens = await createTokenPair(
       { userId, email },
-      keyTokenHolder.publicKey,
-      keyTokenHolder.privateKey
+      keyStore.publicKey,
+      keyStore.privateKey
     );
-   
+
     // Assuming keyTokenHolder is the document instance you've fetched
-    keyTokenHolder.refreshToken = tokens.refreshToken; // Directly set the new refreshToken
-    keyTokenHolder.refreshTokensUsed.addToSet(refreshToken); // Use addToSet method available on Mongoose arrays
+    keyStore.refreshToken = tokens.refreshToken; // Directly set the new refreshToken
+    keyStore.refreshTokensUsed.addToSet(refreshToken); // Use addToSet method available on Mongoose arrays
 
     // Now save the updated document
-    await keyTokenHolder.save();
+    await keyStore.save();
 
     return {
-      user: { userId, email },
+      user,
       tokens,
     };
   };
 
   static logout = async ({ keyStore }) => {
-    
     return await KeyTokenService.deleteKeyToken(keyStore._id);
   };
 
