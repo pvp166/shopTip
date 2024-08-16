@@ -12,6 +12,10 @@ const keyGenerate = () => {
     return {privateKey, publicKey}
 }
 
+const getSelectData = (select = []) => {
+    return Object.fromEntries(select.map(el => [el, 1]))
+}
+
 module.exports = {
-    getInfoData, keyGenerate
+    getInfoData, keyGenerate, getSelectData
 }

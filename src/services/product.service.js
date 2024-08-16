@@ -11,7 +11,7 @@ const {
   findAllPublishForShop,
   unPublishProductByShop,
   getListSearchProduct,
-  findAllProducts
+  findAllProducts,
 } = require("../models/repositories/product.repo");
 class ProductFactory {
   static productRegistry = {};
@@ -49,17 +49,28 @@ class ProductFactory {
     return await findAllPublishForShop({ query, limit, skip });
   }
 
-  static async unPublishProductByShop({product_shop, product_id}) {
-    return await unPublishProductByShop({product_shop, product_id})
+  static async unPublishProductByShop({ product_shop, product_id }) {
+    return await unPublishProductByShop({ product_shop, product_id });
   }
-  static async getListSearchProduct ({keySearch}){
-    return await getListSearchProduct({keySearch})
+  static async getListSearchProduct({ keySearch }) {
+    return await getListSearchProduct({ keySearch });
   }
-  static async findAllProducts({limit =50, sort = 'ctime', page =1, filter={isPublish } }) {
-    return await findAllProducts({keySearch})
+  static async findAllProducts({
+    limit = 50,
+    sort = "ctime",
+    page = 1,
+    filter = { isPublish },
+  }) {
+    return await findAllProducts({
+      limit,
+      sort,
+      page,
+      filter,
+      select: ["product_name", "product_prce", "product_thumb"],
+    });
   }
-  static async findProduct({keySearch}) {
-    return await getListSearchProduct({keySearch})
+  static async findProduct({ keySearch }) {
+    return await getListSearchProduct({ keySearch });
   }
 }
 
@@ -96,7 +107,7 @@ class Clothing extends Product {
       product_shop: this.product_shop,
     });
     if (!newClothing) throw new BadRequestError("Clothing creation failed");
-    const newProduct = await super.createProduct(newElectronic._id);
+    const newProduct = await super.createProduct(newClothing._id);
     if (!newProduct) throw new BadRequestError("Product creation error");
     return newProduct;
   }

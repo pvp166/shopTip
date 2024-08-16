@@ -4,17 +4,24 @@ const {
   furniture,
   clothing,
 } = require("../../models/product.model");
+const { getSelectData} = require('@src/utils/')
 
 const findAllDraftsForShop = async ({ query, limit, skip }) => {
   return await queryProduct({ query, limit, skip });
 };
 
-const getListSearchProduct =  async ({ keySearch }) => {
+const getListSearchProduct = async ({ keySearch }) => {
   const regexSearch = new RegExp(keySearch);
-  const results = await product.find({
-    isPublish: true,
-    $text: {$search: regexSearch},
-  }, {score: {meta: 'textScore'}}).sort({score: {$meta: 'textScore'}}).lean()
+  const results = await product
+    .find(
+      {
+        isPublish: true,
+        $text: { $search: regexSearch },
+      },
+      { score: { meta: "textScore" } }
+    )
+    .sort({ score: { $meta: "textScore" } })
+    .lean();
   return results;
 };
 
@@ -38,7 +45,7 @@ const unPublishProductByShop = async ({ product_shop, product_id }) => {
   foundShop.isDraft = true;
   foundShop.isPublish = false;
   return await foundShop.save();
-}
+};
 
 const findAllPublishForShop = async ({ query, limit, skip }) => {
   return await queryProduct({ query, limit, skip });
@@ -55,9 +62,18 @@ const queryProduct = async ({ query, limit, skip }) => {
     .exec();
 };
 
-const findAllProducts = async() => {
-  
-}
+const findAllProducts = async ({ limit, sort, page, filter, select }) => {
+  const skip = (page - 1) * limit;
+  const sortBy = sort === "ctime" ? { _id: -1 } : { _id: 1 };
+  const products = await product.find(filter)
+  .sort(sortBy)
+  .skip(skip)
+  .limit(limit)
+  .select(getSelectData)
+  .lean()
+
+  return products
+};
 
 module.exports = {
   findAllDraftsForShop,
@@ -65,5 +81,5 @@ module.exports = {
   findAllPublishForShop,
   unPublishProductByShop,
   getListSearchProduct,
-  findAllProducts
+  findAllProducts,
 };
